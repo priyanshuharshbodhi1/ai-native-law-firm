@@ -55,7 +55,23 @@ export function homePage() {
       .subtitle { margin-top: 3px; color: var(--muted); font-size: 14px; }
       .status { display: flex; align-items: center; gap: 8px; color: var(--green); font-weight: 650; font-size: 13px; white-space: nowrap; }
       .dot { width: 9px; height: 9px; border-radius: 999px; background: var(--green); }
-      .header-actions { display: flex; align-items: center; gap: 10px; }
+      .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+      .template-count {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .hidden-file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
 
       main {
         display: grid;
@@ -308,7 +324,7 @@ export function homePage() {
       .toast.show { opacity: 1; transform: translateY(0); }
       @media (max-width: 900px) {
         header { height: auto; align-items: flex-start; padding: 14px 16px; flex-direction: column; }
-        .header-actions { width: 100%; justify-content: space-between; }
+        .header-actions { width: 100%; justify-content: flex-start; }
         .settings-body { grid-template-columns: 1fr; }
         main { grid-template-columns: 1fr; padding: 12px; }
         form, .output { height: auto; max-height: none; }
@@ -338,6 +354,9 @@ export function homePage() {
           </div>
         </div>
         <div class="header-actions">
+          <button class="btn secondary" id="uploadTemplatesTop" type="button">Upload Templates</button>
+          <span class="template-count" id="topTemplateStatus">Templates: 0</span>
+          <input class="hidden-file-input" id="referenceTemplateFile" type="file" accept=".txt,.md,.text" multiple />
           <button class="btn secondary" id="toggleSettings" type="button">AI Settings</button>
           <div class="status"><span class="dot"></span><span id="healthText">Checking connection</span></div>
         </div>
@@ -460,9 +479,8 @@ export function homePage() {
                 <div class="hint">Include the information being shared and any concerns, e.g. product roadmap, pricing, customer metadata, personal data, security details.</div>
               </div>
               <div class="field full">
-                <label for="referenceTemplateFile">Firm Template Library</label>
+                <label for="savedTemplateSelect">Firm Template Library</label>
                 <div class="template-library">
-                  <input id="referenceTemplateFile" type="file" accept=".txt,.md,.text" multiple />
                   <div class="template-library-row">
                     <select id="savedTemplateSelect"></select>
                     <button class="btn secondary" id="savePastedTemplate" type="button">Save Pasted Template</button>
@@ -676,6 +694,7 @@ export function homePage() {
       function updateTemplateStatus() {
         const count = state.templateLibrary.length;
         const best = bestSavedTemplate();
+        $("topTemplateStatus").textContent = "Templates: " + count;
         $("templateLibraryStatus").textContent = count === 0
           ? "No saved templates yet."
           : "Saved templates: " + count + (best ? ". Auto pick: " + best.name + "." : ".");
@@ -1006,6 +1025,7 @@ export function homePage() {
       });
       $("draftForm").addEventListener("submit", submitDraft);
       $("reviewForm").addEventListener("submit", submitReview);
+      $("uploadTemplatesTop").addEventListener("click", () => $("referenceTemplateFile").click());
       $("loadDraftSample").addEventListener("click", () => fillDraft(draftSample));
       $("loadReviewSample").addEventListener("click", () => fillReview(reviewSample));
       $("clearDraft").addEventListener("click", () => $("draftForm").reset());
