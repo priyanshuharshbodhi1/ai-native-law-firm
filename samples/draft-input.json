@@ -16,12 +16,12 @@
     "jurisdiction": "India",
     "governingLaw": "India",
     "purpose": "evaluating a potential SaaS integration and commercial partnership",
-    "transactionContext": "The parties will exchange product roadmaps, API documentation, pricing, customer requirements, and limited customer metadata.",
-    "confidentialInfoTypes": ["product roadmap", "API documentation", "pricing", "customer metadata"],
+    "transactionContext": "The parties will exchange product roadmaps, technical product documents, pricing, customer requirements, and limited customer metadata.",
+    "confidentialInfoTypes": ["product roadmap", "technical product documents", "pricing", "customer metadata"],
     "termMonths": 24,
     "confidentialitySurvivalMonths": 36,
     "riskPosture": "balanced",
-    "specialConcerns": ["customer metadata may include personal data", "API security details will be shared"]
+    "specialConcerns": ["customer metadata may include personal data", "technical security details will be shared"]
   },
   "requestedClauseIds": ["data-security", "return-or-destruction"],
   "lawyerReviewer": "Lawyer Cofounder"
