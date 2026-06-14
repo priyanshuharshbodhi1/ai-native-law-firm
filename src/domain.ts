@@ -23,12 +23,22 @@ export const ClientContextSchema = z.object({
   specialConcerns: z.array(z.string()).default([]),
 });
 
+export const AiSettingsSchema = z
+  .object({
+    provider: z.enum(["none", "openai", "anthropic", "gemini"]).default("none"),
+    model: z.string().trim().optional(),
+    apiKey: z.string().trim().optional(),
+    enabled: z.boolean().default(false),
+  })
+  .default({ provider: "none", enabled: false });
+
 export const DraftNdaInputSchema = z.object({
   templateId: z.enum(["startup-unilateral-india", "mutual-saas-india", "short-form-india"]),
   clientContext: ClientContextSchema,
   requestedClauseIds: z.array(z.string()).default([]),
   referenceTemplateText: z.string().optional(),
   lawyerReviewer: z.string().optional(),
+  aiSettings: AiSettingsSchema.optional(),
 });
 
 export const ReviewAgreementInputSchema = z.object({
@@ -36,10 +46,12 @@ export const ReviewAgreementInputSchema = z.object({
   clientContext: ClientContextSchema,
   reviewGoal: z.enum(["sign-fast", "negotiate-balanced", "maximize-protection"]).default("negotiate-balanced"),
   lawyerReviewer: z.string().optional(),
+  aiSettings: AiSettingsSchema.optional(),
 });
 
 export type Party = z.infer<typeof PartySchema>;
 export type ClientContext = z.infer<typeof ClientContextSchema>;
+export type AiSettings = z.infer<typeof AiSettingsSchema>;
 export type DraftNdaInput = z.infer<typeof DraftNdaInputSchema>;
 export type ReviewAgreementInput = z.infer<typeof ReviewAgreementInputSchema>;
 
@@ -69,6 +81,10 @@ export interface ClauseSource {
 export interface DraftNdaOutput {
   workflow: "draft-nda";
   draftMarkdown: string;
+  aiDraftUsed?: boolean;
+  aiProvider?: string;
+  aiModel?: string;
+  aiNotes?: string[];
   clauseSources: ClauseSource[];
   missingContextQuestions: MissingContextQuestion[];
   lawyerChecklist: string[];
@@ -87,6 +103,10 @@ export interface ReviewIssue {
 export interface ReviewAgreementOutput {
   workflow: "review-agreement";
   summary: string;
+  aiReviewUsed?: boolean;
+  aiProvider?: string;
+  aiModel?: string;
+  aiReviewMemo?: string;
   issues: ReviewIssue[];
   negotiationPoints: string[];
   lawyerChecklist: string[];

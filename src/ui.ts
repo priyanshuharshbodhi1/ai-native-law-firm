@@ -52,6 +52,7 @@ export function homePage() {
       .subtitle { margin-top: 2px; color: var(--muted); font-size: 13px; }
       .status { display: flex; align-items: center; gap: 8px; color: var(--green); font-weight: 650; font-size: 13px; white-space: nowrap; }
       .dot { width: 9px; height: 9px; border-radius: 999px; background: var(--green); }
+      .header-actions { display: flex; align-items: center; gap: 10px; }
 
       main {
         display: grid;
@@ -66,6 +67,51 @@ export function homePage() {
         border-radius: 8px;
         min-height: 0;
         overflow: hidden;
+      }
+      .settings-bar {
+        margin: 18px 18px 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .settings-summary {
+        width: 100%;
+        border: 0;
+        background: var(--panel-2);
+        color: var(--text);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        font-weight: 800;
+        text-align: left;
+      }
+      .settings-summary span:last-child { color: var(--muted); font-size: 12px; font-weight: 750; }
+      .settings-body {
+        display: grid;
+        grid-template-columns: 110px 150px minmax(180px, 1fr) minmax(180px, 1fr) 150px;
+        gap: 10px;
+        padding: 12px 16px 14px;
+        align-items: end;
+      }
+      .switch-field { flex-direction: row; align-items: center; gap: 9px; margin-bottom: 0; }
+      .switch-field input { width: auto; }
+      .settings-note { grid-column: 1 / -1; margin: -4px 0 0; }
+      .api-key-wrap { position: relative; }
+      .api-key-wrap input { padding-right: 82px; }
+      .mini-btn {
+        position: absolute;
+        right: 5px;
+        top: 5px;
+        min-height: 28px;
+        border: 1px solid #cfd7df;
+        border-radius: 6px;
+        background: #fff;
+        padding: 3px 8px;
+        font-size: 12px;
+        font-weight: 800;
       }
       .panel-head {
         display: flex;
@@ -198,6 +244,24 @@ export function homePage() {
       .pill.low { color: var(--green); background: #eaf8f3; }
       ul.clean { margin: 0; padding-left: 20px; color: #2d3640; line-height: 1.5; }
       .small { color: var(--muted); font-size: 12px; }
+      .ai-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid #c6ddff;
+        background: #f1f7ff;
+        color: #173f9d;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        font-weight: 750;
+      }
+      .ai-banner.off {
+        border-color: var(--border);
+        background: var(--panel-2);
+        color: var(--muted);
+      }
       .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
       .hidden { display: none; }
       .toast {
@@ -217,6 +281,8 @@ export function homePage() {
       .toast.show { opacity: 1; transform: translateY(0); }
       @media (max-width: 900px) {
         header { height: auto; align-items: flex-start; padding: 14px 16px; flex-direction: column; }
+        .header-actions { width: 100%; justify-content: space-between; }
+        .settings-body { grid-template-columns: 1fr; }
         main { grid-template-columns: 1fr; padding: 12px; }
         form, .output { height: auto; max-height: none; }
         .summary-row { grid-template-columns: 1fr 1fr; }
@@ -242,8 +308,53 @@ export function homePage() {
             <div class="subtitle">Prepare and review NDAs with a lawyer approval checklist.</div>
           </div>
         </div>
-        <div class="status"><span class="dot"></span><span id="healthText">Checking connection</span></div>
+        <div class="header-actions">
+          <button class="btn secondary" id="toggleSettings" type="button">AI Settings</button>
+          <div class="status"><span class="dot"></span><span id="healthText">Checking connection</span></div>
+        </div>
       </header>
+
+      <section class="settings-bar" id="settingsPanel">
+        <button class="settings-summary" id="settingsSummary" type="button">
+          <span>AI Settings</span>
+          <span id="aiSettingsStatus">Rule-based mode</span>
+        </button>
+        <div class="settings-body" id="settingsBody">
+          <label class="field switch-field" for="aiEnabled">
+            <input id="aiEnabled" type="checkbox" />
+            <span>Use AI</span>
+          </label>
+          <div class="field">
+            <label for="aiProvider">Provider</label>
+            <select id="aiProvider">
+              <option value="none">None</option>
+              <option value="openai">OpenAI / ChatGPT</option>
+              <option value="anthropic">Claude</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aiModel">Model</label>
+            <select id="aiModel"></select>
+          </div>
+          <div class="field">
+            <label for="aiCustomModel">Custom Model</label>
+            <input id="aiCustomModel" placeholder="Optional model name" />
+          </div>
+          <div class="field">
+            <label for="aiApiKey">API Key</label>
+            <div class="api-key-wrap">
+              <input id="aiApiKey" type="password" autocomplete="off" placeholder="Paste key" />
+              <button class="mini-btn" id="toggleApiKey" type="button">Show</button>
+            </div>
+          </div>
+          <div class="settings-note small">
+            The key is saved only in this browser. The server uses it for the selected request and does not write it to this repo.
+            <button class="btn secondary" id="saveAiSettings" type="button" style="margin-left: 8px;">Save Settings</button>
+            <button class="btn secondary" id="clearAiSettings" type="button">Clear Key</button>
+          </div>
+        </div>
+      </section>
 
       <main>
         <section class="panel">
@@ -434,6 +545,13 @@ export function homePage() {
       const draftSample = ${JSON.stringify(draftSample)};
       const reviewSample = ${JSON.stringify(reviewSample)};
       const state = { active: "draft", lastText: "", lastFilename: "nda-output.txt" };
+      const aiStorageKey = "nda-workbench-ai-settings";
+      const modelOptions = {
+        none: [""],
+        openai: ["gpt-5.5", "gpt-5.4"],
+        anthropic: ["claude-fable-5", "claude-opus-4-8", "claude-sonnet-4-7"],
+        gemini: ["gemini-3.1-pro-preview", "gemini-3.5-flash"]
+      };
 
       const $ = (id) => document.getElementById(id);
       const splitList = (value) => value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -442,6 +560,55 @@ export function homePage() {
         button.disabled = busy;
         button.textContent = busy ? "Working..." : label;
       };
+
+      function selectedAiModel() {
+        return $("aiCustomModel").value.trim() || $("aiModel").value;
+      }
+
+      function aiSettingsPayload() {
+        return {
+          enabled: $("aiEnabled").checked,
+          provider: $("aiEnabled").checked ? $("aiProvider").value : "none",
+          model: selectedAiModel(),
+          apiKey: $("aiApiKey").value.trim()
+        };
+      }
+
+      function updateModelOptions(selectedModel = "") {
+        const provider = $("aiProvider").value;
+        const models = modelOptions[provider] || [""];
+        $("aiModel").innerHTML = models.map((model) => '<option value="' + escapeHtml(model) + '">' + escapeHtml(model || "No model") + '</option>').join("");
+        if (selectedModel && models.includes(selectedModel)) {
+          $("aiModel").value = selectedModel;
+          $("aiCustomModel").value = "";
+        } else if (selectedModel) {
+          $("aiCustomModel").value = selectedModel;
+        }
+      }
+
+      function updateAiStatus() {
+        const settings = aiSettingsPayload();
+        const isReady = settings.enabled && settings.provider !== "none" && settings.apiKey;
+        $("aiSettingsStatus").textContent = isReady
+          ? "AI on: " + $("aiProvider").selectedOptions[0].text + " / " + (settings.model || "default model")
+          : "Rule-based mode";
+      }
+
+      function loadAiSettings() {
+        const saved = JSON.parse(localStorage.getItem(aiStorageKey) || "{}");
+        $("aiEnabled").checked = Boolean(saved.enabled);
+        $("aiProvider").value = saved.provider || "none";
+        updateModelOptions(saved.model || "");
+        $("aiApiKey").value = saved.apiKey || "";
+        updateAiStatus();
+      }
+
+      function saveAiSettings() {
+        const settings = aiSettingsPayload();
+        localStorage.setItem(aiStorageKey, JSON.stringify(settings));
+        updateAiStatus();
+        toast(settings.enabled && settings.provider !== "none" ? "AI settings saved" : "Rule-based mode saved");
+      }
 
       async function checkHealth() {
         try {
@@ -509,7 +676,8 @@ export function homePage() {
             specialConcerns: splitList($("specialConcerns").value)
           },
           requestedClauseIds: ["data-security", "return-or-destruction"],
-          referenceTemplateText: $("referenceTemplateText").value
+          referenceTemplateText: $("referenceTemplateText").value,
+          aiSettings: aiSettingsPayload()
         };
       }
 
@@ -529,7 +697,8 @@ export function homePage() {
             confidentialitySurvivalMonths: 36,
             riskPosture: $("reviewRiskPosture").value,
             specialConcerns: []
-          }
+          },
+          aiSettings: aiSettingsPayload()
         };
       }
 
@@ -564,7 +733,11 @@ export function homePage() {
       function renderDraft(data) {
         const text = data.draftMarkdown;
         enableExport(text, "nda-draft.txt");
+        const aiBanner = data.aiDraftUsed
+          ? '<div class="ai-banner"><span>AI polished this draft with ' + escapeHtml(data.aiProvider) + ' / ' + escapeHtml(data.aiModel) + '</span><span>Lawyer approval required</span></div>'
+          : '<div class="ai-banner off"><span>Rule-based draft. Add an API key in AI Settings to polish with a selected model.</span><span>Lawyer approval required</span></div>';
         $("output").innerHTML =
+          aiBanner +
           '<div class="summary-row">' +
             '<div class="metric"><div class="value">' + data.clauseSources.length + '</div><div class="label">Clauses used</div></div>' +
             '<div class="metric"><div class="value">' + data.missingContextQuestions.length + '</div><div class="label">Open questions</div></div>' +
@@ -573,6 +746,7 @@ export function homePage() {
           '</div>' +
           '<div class="result-section"><div class="result-title">Prepared NDA <span class="small">' + escapeHtml(data.audit.generatedAt) + '</span></div><div class="result-body"><div class="document-page">' + escapeHtml(data.draftMarkdown) + '</div></div></div>' +
           '<div class="result-section"><div class="result-title">How the Lawyer Should Use This</div><div class="result-body">' + renderProcess() + '</div></div>' +
+          (data.aiNotes ? '<div class="result-section"><div class="result-title">AI Notes</div><div class="result-body">' + renderList(data.aiNotes) + '</div></div>' : '') +
           '<div class="result-section"><div class="result-title">Questions to Ask Client</div><div class="result-body">' + renderList(data.missingContextQuestions) + '</div></div>' +
           '<div class="result-section"><div class="result-title">Risk Points</div><div class="result-body">' + renderList(data.riskNotes) + '</div></div>' +
           '<div class="result-section"><div class="result-title">Lawyer Checklist</div><div class="result-body">' + renderList(data.lawyerChecklist) + '</div></div>';
@@ -584,7 +758,11 @@ export function homePage() {
         const low = data.issues.filter((issue) => issue.severity === "low").length;
         const text = data.summary + "\\n\\n" + data.issues.map((issue) => '[' + issue.severity.toUpperCase() + '] ' + issue.clauseTitle + ': ' + issue.issue + "\\nSuggested: " + issue.suggestedRedline).join("\\n\\n");
         enableExport(text, "agreement-review.txt");
+        const aiBanner = data.aiReviewUsed
+          ? '<div class="ai-banner"><span>AI review memo created with ' + escapeHtml(data.aiProvider) + ' / ' + escapeHtml(data.aiModel) + '</span><span>Lawyer approval required</span></div>'
+          : '<div class="ai-banner off"><span>Rule-based review. Add an API key in AI Settings to generate an AI review memo.</span><span>Lawyer approval required</span></div>';
         $("output").innerHTML =
+          aiBanner +
           '<div class="summary-row">' +
             '<div class="metric"><div class="value">' + data.issues.length + '</div><div class="label">Total issues</div></div>' +
             '<div class="metric"><div class="value">' + high + '</div><div class="label">High severity</div></div>' +
@@ -592,6 +770,7 @@ export function homePage() {
             '<div class="metric"><div class="value">' + low + '</div><div class="label">Low severity</div></div>' +
           '</div>' +
           '<div class="result-section"><div class="result-title">Review Summary</div><div class="result-body">' + escapeHtml(data.summary) + '</div></div>' +
+          (data.aiReviewMemo ? '<div class="result-section"><div class="result-title">AI Review Memo</div><div class="result-body"><div class="markdown">' + escapeHtml(data.aiReviewMemo) + '</div></div></div>' : '') +
           '<div class="result-section"><div class="result-title">Issues and Suggested Changes</div>' +
             data.issues.map((issue) =>
               '<div class="issue"><div class="issue-head"><div class="issue-title">' + escapeHtml(issue.clauseTitle) + '</div><span class="pill ' + issue.severity + '">' + issue.severity + '</span></div>' +
@@ -644,6 +823,26 @@ export function homePage() {
 
       $("draftTab").addEventListener("click", () => setTab("draft"));
       $("reviewTab").addEventListener("click", () => setTab("review"));
+      $("toggleSettings").addEventListener("click", () => $("settingsBody").classList.toggle("hidden"));
+      $("settingsSummary").addEventListener("click", () => $("settingsBody").classList.toggle("hidden"));
+      $("aiEnabled").addEventListener("change", updateAiStatus);
+      $("aiProvider").addEventListener("change", () => {
+        updateModelOptions();
+        updateAiStatus();
+      });
+      $("aiModel").addEventListener("change", updateAiStatus);
+      $("aiCustomModel").addEventListener("input", updateAiStatus);
+      $("aiApiKey").addEventListener("input", updateAiStatus);
+      $("saveAiSettings").addEventListener("click", saveAiSettings);
+      $("clearAiSettings").addEventListener("click", () => {
+        $("aiApiKey").value = "";
+        saveAiSettings();
+      });
+      $("toggleApiKey").addEventListener("click", () => {
+        const showing = $("aiApiKey").type === "text";
+        $("aiApiKey").type = showing ? "password" : "text";
+        $("toggleApiKey").textContent = showing ? "Show" : "Hide";
+      });
       $("draftForm").addEventListener("submit", submitDraft);
       $("reviewForm").addEventListener("submit", submitReview);
       $("loadDraftSample").addEventListener("click", () => fillDraft(draftSample));
@@ -670,6 +869,7 @@ export function homePage() {
         $("referenceTemplateText").value = await file.text();
       });
 
+      loadAiSettings();
       fillDraft(draftSample);
       fillReview(reviewSample);
       checkHealth();

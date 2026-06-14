@@ -1,9 +1,4 @@
-import { handleAppRequest } from "./httpApp.js";
-
-export { ndaBuilderAgent, NdaBuilderAgent } from "./agents/ndaAgent.js";
-export { draftNdaWorkflow } from "./workflows/draftNdaWorkflow.js";
-export { reviewAgreementWorkflow } from "./workflows/reviewAgreementWorkflow.js";
-export * from "./domain.js";
+import { handleAppRequest } from "../src/httpApp.js";
 
 export default async function handler(req: any, res: any) {
   const appResponse = await handleAppRequest(req.method, vercelPath(req), await requestBody(req));

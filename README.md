@@ -7,6 +7,8 @@ Lawyer-in-the-loop agent for two workflows:
 
 This repo is a TypeScript-first skeleton designed to be plugged into Mastra workflows, a Next.js app, or a standalone API. The current version runs deterministically without a paid model key, so lawyers can inspect the workflow before adding LLM calls.
 
+The browser UI also supports optional AI polishing/review with a user-provided API key for OpenAI, Claude, or Gemini. If no key is added, the same rule-based workflow still works.
+
 ## Stack Decision
 
 Use **TypeScript + Mastra-oriented workflows** for this product.
@@ -35,11 +37,61 @@ Start the local JSON API:
 bun run server
 ```
 
+Open:
+
+```text
+http://localhost:3007/
+```
+
 Endpoints:
 
 - `POST /draft`
 - `POST /review`
 - `GET /health`
+
+## AI Settings
+
+In the app, open **AI Settings** and choose:
+
+- Provider: OpenAI / ChatGPT, Claude, Gemini, or None.
+- Model: choose a preset or type a custom model name.
+- API key: saved only in the current browser's local storage.
+
+Recommended legal-work presets:
+
+- OpenAI: `gpt-5.5` for highest-quality drafting/review, `gpt-5.4` for strong daily work.
+- Claude: `claude-fable-5` for highest capability, `claude-opus-4-8` for complex reasoning, `claude-sonnet-4-7` for strong speed/quality balance.
+- Gemini: `gemini-3.1-pro-preview` for complex legal reasoning, `gemini-3.5-flash` for stable high-throughput work.
+
+When AI is enabled, the backend uses the selected provider for that request:
+
+- Draft workflow: the rule-based draft is assembled first, then the model polishes it into a cleaner lawyer-reviewable NDA.
+- Review workflow: rule-based issues are found first, then the model creates a lawyer review memo.
+
+Every output still requires lawyer approval.
+
+## Deploy to Vercel
+
+This repo includes `api/index.ts` and `vercel.json`, so Vercel can run the same routes as the local server:
+
+- `/`
+- `/draft`
+- `/review`
+- `/health`
+
+Deploy:
+
+```bash
+bunx vercel
+```
+
+For a production deployment:
+
+```bash
+bunx vercel --prod
+```
+
+If Vercel asks framework questions, keep the defaults. The app does not need server-side environment variables for provider keys because each lawyer adds their own key in the browser UI.
 
 ## Product Shape
 
@@ -58,7 +110,7 @@ Input:
 
 Output:
 
-- Draft NDA in Markdown
+- Draft NDA as a clean legal document view
 - Clause source map
 - Missing context questions
 - Lawyer review checklist
