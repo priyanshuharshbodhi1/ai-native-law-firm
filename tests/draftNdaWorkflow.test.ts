@@ -8,7 +8,7 @@ describe("draftNdaWorkflow", () => {
     const result = draftNdaWorkflow(DraftNdaInputSchema.parse(draftInput));
 
     expect(result.workflow).toBe("draft-nda");
-    expect(result.draftMarkdown).toContain("Mutual SaaS NDA - India");
+    expect(result.draftMarkdown).toContain("MUTUAL SAAS NDA - INDIA");
     expect(result.draftMarkdown).toContain("Data Security and Personal Data");
     expect(result.clauseSources.length).toBeGreaterThan(4);
     expect(result.lawyerChecklist.length).toBeGreaterThan(3);

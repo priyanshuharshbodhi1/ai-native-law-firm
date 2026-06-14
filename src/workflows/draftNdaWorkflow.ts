@@ -13,34 +13,46 @@ export function draftNdaWorkflow(rawInput: DraftNdaInput): DraftNdaOutput {
   const input = DraftNdaInputSchema.parse(rawInput);
   const { clientContext } = input;
   const template = getTemplate(input.templateId);
-  const clauses = selectClauses(clientContext, input.requestedClauseIds);
+  const templateClauseIds = inferClauseIdsFromReferenceTemplate(input.referenceTemplateText);
+  const clauses = selectClauses(clientContext, [...input.requestedClauseIds, ...templateClauseIds]);
 
   const clauseSources: ClauseSource[] = clauses.map((clause) => ({
     clauseId: clause.id,
     title: clause.title,
-    reason: clause.category === "core" ? "Core NDA clause" : `Selected for ${clause.category} risk`,
+    reason: templateClauseIds.includes(clause.id)
+      ? "Included because a similar concept appears in the lawyer's previous template"
+      : clause.category === "core"
+        ? "Core NDA clause"
+        : `Selected for ${clause.category} risk`,
   }));
+  if (input.referenceTemplateText?.trim()) {
+    clauseSources.unshift({
+      clauseId: "lawyer-reference-template",
+      title: "Lawyer reference template",
+      reason: "The lawyer supplied a previous NDA/template; the workflow used it to identify matching clause concepts and review points.",
+    });
+  }
 
   const body = clauses
-    .map((clause, index) => `### ${index + 1}. ${clause.title}\n\n${clause.body}`)
+    .map((clause, index) => `${index + 1}. ${clause.title}\n\n${clause.body}`)
     .join("\n\n");
 
   const draftMarkdown = [
-    `# ${template.title}`,
+    template.title.toUpperCase(),
     "",
     template.renderPreamble(clientContext),
     "",
-    `**Purpose:** ${clientContext.purpose}`,
+    `Purpose: ${clientContext.purpose}`,
     "",
-    `**Term:** ${clientContext.termMonths} months. Confidentiality obligations survive for ${clientContext.confidentialitySurvivalMonths} months unless a longer period applies to trade secrets or applicable law.`,
+    `Term: ${clientContext.termMonths} months. Confidentiality obligations survive for ${clientContext.confidentialitySurvivalMonths} months unless a longer period applies to trade secrets or applicable law.`,
     "",
     body,
     "",
-    "### Governing Law",
+    "Governing Law",
     "",
     `This Agreement is governed by the laws of ${clientContext.governingLaw}.`,
     "",
-    "### Signatures",
+    "Signatures",
     "",
     `For ${clientContext.client.legalName}: ___________________`,
     "",
@@ -65,6 +77,20 @@ export function draftNdaWorkflow(rawInput: DraftNdaInput): DraftNdaOutput {
   };
 }
 
+function inferClauseIdsFromReferenceTemplate(referenceTemplateText = "") {
+  const text = referenceTemplateText.toLowerCase();
+  const ids = new Set<string>();
+
+  if (/return|destroy|destruction|delete/.test(text)) ids.add("return-or-destruction");
+  if (/injunctive|equitable relief|irreparable/.test(text)) ids.add("injunctive-relief");
+  if (/personal data|data protection|security|breach|unauthorized access|dpdp/.test(text)) ids.add("data-security");
+  if (/non[- ]?solicit|solicitation/.test(text)) ids.add("non-solicit-light");
+  if (/residual|unaided memory/.test(text)) ids.add("residual-knowledge");
+  if (/license|intellectual property|ip rights|ownership/.test(text)) ids.add("no-license");
+
+  return Array.from(ids);
+}
+
 function buildRiskNotes(input: DraftNdaInput) {
   const notes: string[] = [];
   const { clientContext } = input;
@@ -79,6 +105,10 @@ function buildRiskNotes(input: DraftNdaInput) {
 
   if (clientContext.specialConcerns.length > 0) {
     notes.push(`Special concerns to review: ${clientContext.specialConcerns.join("; ")}.`);
+  }
+
+  if (input.referenceTemplateText?.trim()) {
+    notes.push("A previous NDA/template was supplied. Lawyer should compare the generated draft against firm-standard positions before sending it out.");
   }
 
   return notes;

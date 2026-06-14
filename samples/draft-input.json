@@ -23,6 +23,7 @@
     "riskPosture": "balanced",
     "specialConcerns": ["customer metadata may include personal data", "technical security details will be shared"]
   },
+  "referenceTemplateText": "MUTUAL NON-DISCLOSURE AGREEMENT\\n\\nThe receiving party shall return or destroy confidential information upon written request. Unauthorized disclosure may cause irreparable harm and the disclosing party may seek injunctive relief. If personal data is shared, the receiving party shall apply reasonable security safeguards and notify the disclosing party of unauthorized access.",
   "requestedClauseIds": ["data-security", "return-or-destruction"],
   "lawyerReviewer": "Lawyer Cofounder"
 }

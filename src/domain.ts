@@ -27,6 +27,7 @@ export const DraftNdaInputSchema = z.object({
   templateId: z.enum(["startup-unilateral-india", "mutual-saas-india", "short-form-india"]),
   clientContext: ClientContextSchema,
   requestedClauseIds: z.array(z.string()).default([]),
+  referenceTemplateText: z.string().optional(),
   lawyerReviewer: z.string().optional(),
 });
 

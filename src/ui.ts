@@ -171,6 +171,23 @@ export function homePage() {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
         font-size: 13px;
       }
+      .document-page {
+        max-width: 820px;
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid #d8dee6;
+        box-shadow: 0 8px 28px rgba(16, 24, 40, 0.08);
+        padding: 42px 48px;
+        color: #111827;
+        line-height: 1.62;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 14px;
+      }
+      .process-grid { display: grid; gap: 8px; }
+      .process-step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+      .step-num { width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; background: var(--soft); color: #344054; font-size: 12px; font-weight: 850; }
       .issue { border-top: 1px solid var(--border); padding: 12px; }
       .issue:first-child { border-top: 0; }
       .issue-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
@@ -204,6 +221,14 @@ export function homePage() {
         form, .output { height: auto; max-height: none; }
         .summary-row { grid-template-columns: 1fr 1fr; }
         .form-grid { grid-template-columns: 1fr; }
+      }
+      @media print {
+        body { background: white; }
+        header, .panel:first-of-type, .panel-head, .summary-row, .result-section:not(:first-of-type), .toast { display: none !important; }
+        main { display: block; padding: 0; }
+        .panel { border: 0; }
+        .output { height: auto; overflow: visible; padding: 0; }
+        .document-page { box-shadow: none; border: 0; max-width: none; padding: 0; }
       }
     </style>
   </head>
@@ -302,6 +327,15 @@ export function homePage() {
                 <label for="specialConcerns">Special Concerns</label>
                 <input id="specialConcerns" />
               </div>
+              <div class="field full">
+                <label for="referenceTemplateFile">Previous NDA / Firm Template</label>
+                <input id="referenceTemplateFile" type="file" accept=".txt,.md,.text" />
+                <div class="hint">Optional. Upload a text file or paste below. The system will use it as a reference for clause choices and lawyer review points.</div>
+              </div>
+              <div class="field full">
+                <label for="referenceTemplateText">Paste Previous NDA or Template</label>
+                <textarea id="referenceTemplateText" style="min-height: 150px;"></textarea>
+              </div>
             </div>
             <div class="actions">
               <div class="action-group">
@@ -379,6 +413,7 @@ export function homePage() {
             <div class="toolbar">
               <button class="btn secondary" id="copyOutput" type="button" disabled>Copy Output</button>
               <button class="btn secondary" id="downloadOutput" type="button" disabled>Download Output</button>
+              <button class="btn secondary" id="printOutput" type="button" disabled>Print / Save PDF</button>
             </div>
           </div>
           <div class="output" id="output">
@@ -441,6 +476,7 @@ export function homePage() {
         $("transactionContext").value = sample.clientContext.transactionContext || "";
         $("confidentialInfoTypes").value = (sample.clientContext.confidentialInfoTypes || []).join(", ");
         $("specialConcerns").value = (sample.clientContext.specialConcerns || []).join(", ");
+        $("referenceTemplateText").value = sample.referenceTemplateText || "";
       }
 
       function fillReview(sample) {
@@ -472,7 +508,8 @@ export function homePage() {
             riskPosture: $("riskPosture").value,
             specialConcerns: splitList($("specialConcerns").value)
           },
-          requestedClauseIds: ["data-security", "return-or-destruction"]
+          requestedClauseIds: ["data-security", "return-or-destruction"],
+          referenceTemplateText: $("referenceTemplateText").value
         };
       }
 
@@ -506,11 +543,27 @@ export function homePage() {
         state.lastFilename = filename;
         $("copyOutput").disabled = false;
         $("downloadOutput").disabled = false;
+        $("printOutput").disabled = false;
+      }
+
+      const lawyerProcess = [
+        "Collect client facts: parties, purpose, business context, confidential information, term, governing law, and signing authority.",
+        "Add the firm's previous NDA/template if available so the draft follows the lawyer's usual positions.",
+        "Prepare the first draft and read the questions to ask the client before sending anything outside the firm.",
+        "Review risk points, compare against the supplied firm template, and edit clauses that need jurisdiction or client-specific judgment.",
+        "Confirm stamp/execution requirements, final party details, and signing authority.",
+        "Send the lawyer-approved NDA to the client/counterparty, not the raw generated draft."
+      ];
+
+      function renderProcess() {
+        return '<div class="process-grid">' + lawyerProcess.map((step, index) =>
+          '<div class="process-step"><div class="step-num">' + (index + 1) + '</div><div>' + escapeHtml(step) + '</div></div>'
+        ).join("") + '</div>';
       }
 
       function renderDraft(data) {
         const text = data.draftMarkdown;
-        enableExport(text, "nda-draft.md");
+        enableExport(text, "nda-draft.txt");
         $("output").innerHTML =
           '<div class="summary-row">' +
             '<div class="metric"><div class="value">' + data.clauseSources.length + '</div><div class="label">Clauses used</div></div>' +
@@ -518,7 +571,8 @@ export function homePage() {
             '<div class="metric"><div class="value">' + data.riskNotes.length + '</div><div class="label">Risk notes</div></div>' +
             '<div class="metric"><div class="value">Yes</div><div class="label">Lawyer review</div></div>' +
           '</div>' +
-          '<div class="result-section"><div class="result-title">Prepare NDA <span class="small">' + escapeHtml(data.audit.generatedAt) + '</span></div><div class="result-body markdown">' + escapeHtml(data.draftMarkdown) + '</div></div>' +
+          '<div class="result-section"><div class="result-title">Prepared NDA <span class="small">' + escapeHtml(data.audit.generatedAt) + '</span></div><div class="result-body"><div class="document-page">' + escapeHtml(data.draftMarkdown) + '</div></div></div>' +
+          '<div class="result-section"><div class="result-title">How the Lawyer Should Use This</div><div class="result-body">' + renderProcess() + '</div></div>' +
           '<div class="result-section"><div class="result-title">Questions to Ask Client</div><div class="result-body">' + renderList(data.missingContextQuestions) + '</div></div>' +
           '<div class="result-section"><div class="result-title">Risk Points</div><div class="result-body">' + renderList(data.riskNotes) + '</div></div>' +
           '<div class="result-section"><div class="result-title">Lawyer Checklist</div><div class="result-body">' + renderList(data.lawyerChecklist) + '</div></div>';
@@ -608,6 +662,12 @@ export function homePage() {
         a.download = state.lastFilename;
         a.click();
         URL.revokeObjectURL(url);
+      });
+      $("printOutput").addEventListener("click", () => window.print());
+      $("referenceTemplateFile").addEventListener("change", async (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        $("referenceTemplateText").value = await file.text();
       });
 
       fillDraft(draftSample);
