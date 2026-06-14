@@ -441,15 +441,7 @@ export function homePage() {
               <div class="field full">
                 <label for="transactionContext">Background / Deal Context</label>
                 <textarea id="transactionContext"></textarea>
-              </div>
-              <div class="field full">
-                <label for="confidentialInfoTypes">Confidential Information Types</label>
-                <input id="confidentialInfoTypes" />
-                <div class="hint">Separate with commas, e.g. pricing, product documents, customer data.</div>
-              </div>
-              <div class="field full">
-                <label for="specialConcerns">Special Concerns</label>
-                <input id="specialConcerns" />
+                <div class="hint">Include the information being shared and any concerns, e.g. product roadmap, pricing, customer metadata, personal data, security details.</div>
               </div>
               <div class="field full">
                 <label for="referenceTemplateFile">Previous NDA / Firm Template</label>
@@ -513,8 +505,9 @@ export function homePage() {
                 <textarea id="reviewPurpose" required></textarea>
               </div>
               <div class="field full">
-                <label for="reviewInfoTypes">Confidential Information Types</label>
-                <input id="reviewInfoTypes" />
+                <label for="reviewBackground">Background / Deal Context</label>
+                <textarea id="reviewBackground"></textarea>
+                <div class="hint">Include what information is being exchanged and any review concerns.</div>
               </div>
               <div class="field full">
                 <label for="agreementText">Paste Agreement Text</label>
@@ -562,12 +555,34 @@ export function homePage() {
       const modelOptions = {
         none: [""],
         openai: ["gpt-5.5", "gpt-5.4"],
-        anthropic: ["claude-fable-5", "claude-opus-4-8", "claude-sonnet-4-7"],
+        anthropic: ["claude-sonnet-4-7", "claude-opus-4-8"],
         gemini: ["gemini-3.1-pro-preview", "gemini-3.5-flash"]
       };
 
       const $ = (id) => document.getElementById(id);
-      const splitList = (value) => value.split(",").map((item) => item.trim()).filter(Boolean);
+      const mergeContext = (...values) => values.map((value) => String(value || "").trim()).filter(Boolean).join("\\n\\n");
+      const deriveConfidentialInfoTypes = (background, fallback) => {
+        const text = (background || "").toLowerCase();
+        const matches = [
+          [/roadmap|product plan/, "product roadmap"],
+          [/technical|architecture|security detail|source code|api|documentation|document/, "technical product documents"],
+          [/pricing|commercial|financial/, "pricing"],
+          [/customer metadata|customer data|user data|personal data|dpdp|privacy/, "customer metadata"],
+          [/sales|pipeline|customer requirement/, "customer requirements"],
+          [/strategy|business plan/, "business strategy"]
+        ].filter(([pattern]) => pattern.test(text)).map(([, label]) => label);
+        const unique = [...new Set(matches)];
+        return unique.length > 0 ? unique : fallback;
+      };
+      const deriveSpecialConcerns = (background) => {
+        const text = String(background || "").trim();
+        if (!text) return [];
+        const concerns = [];
+        if (/personal data|customer metadata|customer data|user data|dpdp|privacy/i.test(text)) concerns.push("review privacy and personal data handling");
+        if (/security|technical security|source code|architecture|credential|api key/i.test(text)) concerns.push("review technical security disclosure limits");
+        if (/non-compete|restrictive|exclusiv/i.test(text)) concerns.push("avoid broad restrictive covenants");
+        return concerns.length > 0 ? concerns : [text];
+      };
       const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
       const buttonBusy = (button, busy, label) => {
         button.disabled = busy;
@@ -653,9 +668,11 @@ export function homePage() {
         $("termMonths").value = sample.clientContext.termMonths || 24;
         $("survivalMonths").value = sample.clientContext.confidentialitySurvivalMonths || 36;
         $("purpose").value = sample.clientContext.purpose || "";
-        $("transactionContext").value = sample.clientContext.transactionContext || "";
-        $("confidentialInfoTypes").value = (sample.clientContext.confidentialInfoTypes || []).join(", ");
-        $("specialConcerns").value = (sample.clientContext.specialConcerns || []).join(", ");
+        $("transactionContext").value = mergeContext(
+          sample.clientContext.transactionContext || "",
+          (sample.clientContext.confidentialInfoTypes || []).length ? "Information being shared: " + sample.clientContext.confidentialInfoTypes.join(", ") + "." : "",
+          (sample.clientContext.specialConcerns || []).length ? "Concerns: " + sample.clientContext.specialConcerns.join("; ") + "." : ""
+        );
         $("referenceTemplateText").value = sample.referenceTemplateText || "";
       }
 
@@ -667,11 +684,16 @@ export function homePage() {
         $("reviewLaw").value = sample.clientContext.governingLaw || "India";
         $("reviewRiskPosture").value = sample.clientContext.riskPosture || "balanced";
         $("reviewPurpose").value = sample.clientContext.purpose || "";
-        $("reviewInfoTypes").value = (sample.clientContext.confidentialInfoTypes || []).join(", ");
+        $("reviewBackground").value = mergeContext(
+          sample.clientContext.transactionContext || "",
+          (sample.clientContext.confidentialInfoTypes || []).length ? "Information being shared: " + sample.clientContext.confidentialInfoTypes.join(", ") + "." : "",
+          (sample.clientContext.specialConcerns || []).length ? "Concerns: " + sample.clientContext.specialConcerns.join("; ") + "." : ""
+        );
         $("agreementText").value = sample.agreementText || "";
       }
 
       function draftPayload() {
+        const background = $("transactionContext").value;
         return {
           templateId: $("templateId").value,
           clientContext: {
@@ -681,12 +703,12 @@ export function homePage() {
             jurisdiction: $("governingLaw").value || "India",
             governingLaw: $("governingLaw").value || "India",
             purpose: $("purpose").value,
-            transactionContext: $("transactionContext").value,
-            confidentialInfoTypes: splitList($("confidentialInfoTypes").value),
+            transactionContext: background,
+            confidentialInfoTypes: deriveConfidentialInfoTypes(background, ["confidential business information"]),
             termMonths: Number($("termMonths").value || 24),
             confidentialitySurvivalMonths: Number($("survivalMonths").value || 36),
             riskPosture: $("riskPosture").value,
-            specialConcerns: splitList($("specialConcerns").value)
+            specialConcerns: deriveSpecialConcerns(background)
           },
           requestedClauseIds: ["data-security", "return-or-destruction"],
           referenceTemplateText: $("referenceTemplateText").value,
@@ -695,6 +717,7 @@ export function homePage() {
       }
 
       function reviewPayload() {
+        const background = $("reviewBackground").value;
         return {
           agreementText: $("agreementText").value,
           reviewGoal: $("reviewGoal").value,
@@ -705,11 +728,12 @@ export function homePage() {
             jurisdiction: $("reviewLaw").value || "India",
             governingLaw: $("reviewLaw").value || "India",
             purpose: $("reviewPurpose").value,
-            confidentialInfoTypes: splitList($("reviewInfoTypes").value),
+            transactionContext: background,
+            confidentialInfoTypes: deriveConfidentialInfoTypes(background, ["confidential business information"]),
             termMonths: 24,
             confidentialitySurvivalMonths: 36,
             riskPosture: $("reviewRiskPosture").value,
-            specialConcerns: []
+            specialConcerns: deriveSpecialConcerns(background)
           },
           aiSettings: aiSettingsPayload()
         };

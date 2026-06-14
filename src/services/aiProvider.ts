@@ -20,7 +20,7 @@ interface ChatMessage {
 const defaultModels: Record<AiSettings["provider"], string> = {
   none: "",
   openai: "gpt-5.5",
-  anthropic: "claude-fable-5",
+  anthropic: "claude-sonnet-4-7",
   gemini: "gemini-3.1-pro-preview",
 };
 
