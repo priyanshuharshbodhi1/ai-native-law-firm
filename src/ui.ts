@@ -8,10 +8,13 @@ export function homePage() {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NDA Workbench</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet" />
     <style>
       :root {
         color-scheme: light;
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: "IBM Plex Sans", "Aptos", "Helvetica Neue", sans-serif;
         --bg: #f6f7f9;
         --panel: #ffffff;
         --panel-2: #fbfcfd;
@@ -33,12 +36,12 @@ export function homePage() {
       button { cursor: pointer; }
       .app { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
       header {
-        height: 64px;
+        min-height: 76px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 20px;
-        padding: 0 24px;
+        padding: 14px 24px;
         background: var(--panel);
         border-bottom: 1px solid var(--border);
       }
@@ -48,8 +51,8 @@ export function homePage() {
         display: grid; place-items: center;
         background: #172033; color: white; font-weight: 800;
       }
-      h1 { margin: 0; font-size: 18px; letter-spacing: 0; line-height: 1.15; }
-      .subtitle { margin-top: 2px; color: var(--muted); font-size: 13px; }
+      h1 { margin: 0; font-size: 23px; letter-spacing: 0; line-height: 1.15; text-wrap: balance; }
+      .subtitle { margin-top: 3px; color: var(--muted); font-size: 14px; }
       .status { display: flex; align-items: center; gap: 8px; color: var(--green); font-weight: 650; font-size: 13px; white-space: nowrap; }
       .dot { width: 9px; height: 9px; border-radius: 999px; background: var(--green); }
       .header-actions { display: flex; align-items: center; gap: 10px; }
@@ -69,7 +72,7 @@ export function homePage() {
         overflow: hidden;
       }
       .settings-bar {
-        margin: 18px 18px 0;
+        margin: 14px 18px 0;
         background: var(--panel);
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -84,6 +87,7 @@ export function homePage() {
         justify-content: space-between;
         align-items: center;
         gap: 12px;
+        min-height: 46px;
         padding: 12px 16px;
         font-weight: 800;
         text-align: left;
@@ -91,9 +95,9 @@ export function homePage() {
       .settings-summary span:last-child { color: var(--muted); font-size: 12px; font-weight: 750; }
       .settings-body {
         display: grid;
-        grid-template-columns: 110px 150px minmax(180px, 1fr) minmax(180px, 1fr) 150px;
-        gap: 10px;
-        padding: 12px 16px 14px;
+        grid-template-columns: 120px 170px minmax(220px, 1fr) minmax(220px, 1fr) 170px;
+        gap: 12px;
+        padding: 14px 16px 16px;
         align-items: end;
       }
       .switch-field { flex-direction: row; align-items: center; gap: 9px; margin-bottom: 0; }
@@ -105,11 +109,11 @@ export function homePage() {
         position: absolute;
         right: 5px;
         top: 5px;
-        min-height: 28px;
+        min-height: 34px;
         border: 1px solid #cfd7df;
         border-radius: 6px;
         background: #fff;
-        padding: 3px 8px;
+        padding: 5px 10px;
         font-size: 12px;
         font-weight: 800;
       }
@@ -127,7 +131,8 @@ export function homePage() {
       .tab {
         border: 0;
         border-radius: 6px;
-        padding: 9px 10px;
+        min-height: 44px;
+        padding: 10px 12px;
         color: var(--muted);
         background: transparent;
         font-weight: 700;
@@ -145,29 +150,27 @@ export function homePage() {
         border-radius: 7px;
         background: white;
         color: var(--text);
-        padding: 9px 10px;
+        min-height: 44px;
+        padding: 10px 11px;
         outline: none;
       }
       textarea { resize: vertical; min-height: 92px; line-height: 1.45; }
       input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(36, 88, 211, 0.12); }
       .hint { margin-top: -5px; color: var(--muted); font-size: 12px; line-height: 1.35; }
       .actions {
-        position: sticky;
-        bottom: 0;
         display: flex;
         gap: 8px;
         align-items: center;
         justify-content: space-between;
         padding: 12px 0 0;
         margin-top: 4px;
-        background: linear-gradient(to top, var(--panel) 84%, rgba(255,255,255,0));
       }
       .action-group { display: flex; gap: 8px; flex-wrap: wrap; }
       .btn {
         border: 1px solid transparent;
         border-radius: 7px;
-        min-height: 38px;
-        padding: 9px 12px;
+        min-height: 44px;
+        padding: 10px 14px;
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -183,12 +186,22 @@ export function homePage() {
       .output { height: calc(100vh - 146px); overflow: auto; padding: 16px; }
       .empty {
         height: 100%;
-        display: grid;
-        place-items: center;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: left;
         color: var(--muted);
         padding: 28px;
       }
+      .empty-card {
+        max-width: 420px;
+        border: 1px dashed #cbd5df;
+        background: #fbfcfd;
+        border-radius: 8px;
+        padding: 22px;
+      }
+      .empty-card h2 { color: var(--text); font-size: 18px; margin-bottom: 6px; }
+      .empty-card p { margin: 0; line-height: 1.45; }
       .summary-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
       .metric {
         background: var(--panel-2);
@@ -210,12 +223,12 @@ export function homePage() {
         font-weight: 800;
       }
       .result-body { padding: 12px; }
-      .markdown {
+      .memo {
         white-space: pre-wrap;
         overflow-wrap: anywhere;
-        line-height: 1.55;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-        font-size: 13px;
+        line-height: 1.58;
+        color: #26313d;
+        font-size: 15px;
       }
       .document-page {
         max-width: 820px;
@@ -223,13 +236,13 @@ export function homePage() {
         background: #fff;
         border: 1px solid #d8dee6;
         box-shadow: 0 8px 28px rgba(16, 24, 40, 0.08);
-        padding: 42px 48px;
+        padding: 46px 54px;
         color: #111827;
-        line-height: 1.62;
+        line-height: 1.68;
         white-space: pre-wrap;
         overflow-wrap: anywhere;
-        font-family: Georgia, "Times New Roman", serif;
-        font-size: 14px;
+        font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+        font-size: 15px;
       }
       .process-grid { display: grid; gap: 8px; }
       .process-step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
@@ -314,7 +327,7 @@ export function homePage() {
         </div>
       </header>
 
-      <section class="settings-bar" id="settingsPanel">
+      <section class="settings-bar hidden" id="settingsPanel">
         <button class="settings-summary" id="settingsSummary" type="button">
           <span>AI Settings</span>
           <span id="aiSettingsStatus">Rule-based mode</span>
@@ -529,9 +542,9 @@ export function homePage() {
           </div>
           <div class="output" id="output">
             <div class="empty">
-              <div>
+              <div class="empty-card">
                 <h2>No output yet</h2>
-                <p>Fill the form on the left, then prepare a new NDA or check an existing one. Results will appear here in plain English.</p>
+                <p>Prepare a new NDA or check an existing one. The finished draft, review questions, risk points, and lawyer checklist will appear here.</p>
               </div>
             </div>
           </div>
@@ -770,7 +783,7 @@ export function homePage() {
             '<div class="metric"><div class="value">' + low + '</div><div class="label">Low severity</div></div>' +
           '</div>' +
           '<div class="result-section"><div class="result-title">Review Summary</div><div class="result-body">' + escapeHtml(data.summary) + '</div></div>' +
-          (data.aiReviewMemo ? '<div class="result-section"><div class="result-title">AI Review Memo</div><div class="result-body"><div class="markdown">' + escapeHtml(data.aiReviewMemo) + '</div></div></div>' : '') +
+          (data.aiReviewMemo ? '<div class="result-section"><div class="result-title">AI Review Memo</div><div class="result-body"><div class="memo">' + escapeHtml(data.aiReviewMemo) + '</div></div></div>' : '') +
           '<div class="result-section"><div class="result-title">Issues and Suggested Changes</div>' +
             data.issues.map((issue) =>
               '<div class="issue"><div class="issue-head"><div class="issue-title">' + escapeHtml(issue.clauseTitle) + '</div><span class="pill ' + issue.severity + '">' + issue.severity + '</span></div>' +
@@ -823,7 +836,7 @@ export function homePage() {
 
       $("draftTab").addEventListener("click", () => setTab("draft"));
       $("reviewTab").addEventListener("click", () => setTab("review"));
-      $("toggleSettings").addEventListener("click", () => $("settingsBody").classList.toggle("hidden"));
+      $("toggleSettings").addEventListener("click", () => $("settingsPanel").classList.toggle("hidden"));
       $("settingsSummary").addEventListener("click", () => $("settingsBody").classList.toggle("hidden"));
       $("aiEnabled").addEventListener("change", updateAiStatus);
       $("aiProvider").addEventListener("change", () => {
