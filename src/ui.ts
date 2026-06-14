@@ -257,6 +257,20 @@ export function homePage() {
       .pill.low { color: var(--green); background: #eaf8f3; }
       ul.clean { margin: 0; padding-left: 20px; color: #2d3640; line-height: 1.5; }
       .small { color: var(--muted); font-size: 12px; }
+      .template-library {
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+      .template-library-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) auto auto auto;
+        gap: 8px;
+        align-items: center;
+      }
       .ai-banner {
         display: flex;
         justify-content: space-between;
@@ -444,12 +458,21 @@ export function homePage() {
                 <div class="hint">Include the information being shared and any concerns, e.g. product roadmap, pricing, customer metadata, personal data, security details.</div>
               </div>
               <div class="field full">
-                <label for="referenceTemplateFile">Previous NDA / Firm Template</label>
-                <input id="referenceTemplateFile" type="file" accept=".txt,.md,.text" />
-                <div class="hint">Optional. Upload a text file or paste below. The system will use it as a reference for clause choices and lawyer review points.</div>
+                <label for="referenceTemplateFile">Firm Template Library</label>
+                <div class="template-library">
+                  <input id="referenceTemplateFile" type="file" accept=".txt,.md,.text" multiple />
+                  <div class="template-library-row">
+                    <select id="savedTemplateSelect"></select>
+                    <button class="btn secondary" id="savePastedTemplate" type="button">Save Pasted Template</button>
+                    <button class="btn secondary" id="deleteSelectedTemplate" type="button">Delete</button>
+                    <button class="btn secondary" id="clearTemplateLibrary" type="button">Clear All</button>
+                  </div>
+                  <div class="small" id="templateLibraryStatus">No saved templates yet.</div>
+                </div>
+                <div class="hint">Uploaded templates are saved in this browser. For each new NDA, the app can auto-select the closest saved template.</div>
               </div>
               <div class="field full">
-                <label for="referenceTemplateText">Paste Previous NDA or Template</label>
+                <label for="referenceTemplateText">Paste One-Off Template or Notes</label>
                 <textarea id="referenceTemplateText" style="min-height: 150px;"></textarea>
               </div>
             </div>
@@ -550,8 +573,9 @@ export function homePage() {
     <script>
       const draftSample = ${JSON.stringify(draftSample)};
       const reviewSample = ${JSON.stringify(reviewSample)};
-      const state = { active: "draft", lastText: "", lastFilename: "nda-output.txt" };
+      const state = { active: "draft", lastText: "", lastFilename: "nda-output.txt", templateLibrary: [] };
       const aiStorageKey = "nda-workbench-ai-settings";
+      const templateLibraryStorageKey = "nda-workbench-template-library";
       const modelOptions = {
         none: [""],
         openai: ["gpt-5.5", "gpt-5.4"],
@@ -561,6 +585,8 @@ export function homePage() {
 
       const $ = (id) => document.getElementById(id);
       const mergeContext = (...values) => values.map((value) => String(value || "").trim()).filter(Boolean).join("\\n\\n");
+      const normalizeText = (value) => String(value || "").toLowerCase();
+      const templateId = () => (globalThis.crypto && globalThis.crypto.randomUUID ? globalThis.crypto.randomUUID() : "template-" + Date.now() + "-" + Math.random().toString(16).slice(2));
       const deriveConfidentialInfoTypes = (background, fallback) => {
         const text = (background || "").toLowerCase();
         const matches = [
@@ -588,6 +614,101 @@ export function homePage() {
         button.disabled = busy;
         button.textContent = busy ? "Working..." : label;
       };
+
+      function saveTemplateLibrary() {
+        localStorage.setItem(templateLibraryStorageKey, JSON.stringify(state.templateLibrary));
+      }
+
+      function loadTemplateLibrary() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(templateLibraryStorageKey) || "[]");
+          state.templateLibrary = Array.isArray(saved) ? saved.filter((template) => template && template.id && template.text) : [];
+        } catch {
+          state.templateLibrary = [];
+        }
+        renderTemplateLibrary();
+      }
+
+      function matterSearchText() {
+        return [
+          $("templateId").selectedOptions[0]?.textContent || "",
+          $("clientRole").value,
+          $("governingLaw").value,
+          $("riskPosture").value,
+          $("purpose").value,
+          $("transactionContext").value
+        ].join(" ");
+      }
+
+      function scoreTemplate(template, matterText) {
+        const haystack = normalizeText(template.name + " " + template.text);
+        const source = normalizeText(matterText);
+        const keywords = [
+          "mutual", "unilateral", "saas", "startup", "india", "recipient", "discloser",
+          "product", "roadmap", "pricing", "customer", "metadata", "personal", "data",
+          "security", "technical", "api", "software", "commercial", "partnership", "vendor"
+        ];
+        const sourceTokens = new Set(source.split(/[^a-z0-9]+/).filter((token) => token.length > 2));
+        let score = 0;
+        for (const token of sourceTokens) if (haystack.includes(token)) score += 1;
+        for (const keyword of keywords) if (source.includes(keyword) && haystack.includes(keyword)) score += 3;
+        if (source.includes("mutual") && haystack.includes("mutual")) score += 6;
+        if (source.includes("india") && haystack.includes("india")) score += 4;
+        return score;
+      }
+
+      function bestSavedTemplate() {
+        if (state.templateLibrary.length === 0) return undefined;
+        const matterText = matterSearchText();
+        return [...state.templateLibrary]
+          .map((template) => ({ template, score: scoreTemplate(template, matterText) }))
+          .sort((a, b) => b.score - a.score || b.template.savedAt.localeCompare(a.template.savedAt))[0]?.template;
+      }
+
+      function selectedSavedTemplate() {
+        const selectedId = $("savedTemplateSelect").value;
+        if (selectedId === "auto") return bestSavedTemplate();
+        return state.templateLibrary.find((template) => template.id === selectedId);
+      }
+
+      function updateTemplateStatus() {
+        const count = state.templateLibrary.length;
+        const best = bestSavedTemplate();
+        $("templateLibraryStatus").textContent = count === 0
+          ? "No saved templates yet."
+          : "Saved templates: " + count + (best ? ". Auto pick: " + best.name + "." : ".");
+      }
+
+      function renderTemplateLibrary() {
+        const currentValue = $("savedTemplateSelect").value || "auto";
+        $("savedTemplateSelect").innerHTML =
+          '<option value="auto">Auto-select best match</option>' +
+          state.templateLibrary.map((template) => '<option value="' + escapeHtml(template.id) + '">' + escapeHtml(template.name) + '</option>').join("");
+        $("savedTemplateSelect").value = state.templateLibrary.some((template) => template.id === currentValue) ? currentValue : "auto";
+        $("deleteSelectedTemplate").disabled = state.templateLibrary.length === 0 || $("savedTemplateSelect").value === "auto";
+        $("clearTemplateLibrary").disabled = state.templateLibrary.length === 0;
+        updateTemplateStatus();
+      }
+
+      function upsertTemplates(templates) {
+        for (const template of templates) {
+          const existingIndex = state.templateLibrary.findIndex((saved) => saved.name === template.name);
+          if (existingIndex >= 0) state.templateLibrary[existingIndex] = template;
+          else state.templateLibrary.push(template);
+        }
+        saveTemplateLibrary();
+        renderTemplateLibrary();
+        toast(templates.length === 1 ? "Template saved" : templates.length + " templates saved");
+      }
+
+      function referenceTemplateForDraft() {
+        const saved = selectedSavedTemplate();
+        const pasted = $("referenceTemplateText").value.trim();
+        if (!saved) return pasted;
+        const savedBlock = "Selected saved firm template: " + saved.name + "\\n\\n" + saved.text;
+        if (!pasted || pasted === saved.text.trim()) return savedBlock;
+        return mergeContext(savedBlock, "Additional pasted reference or notes:\\n\\n" + pasted);
+      }
 
       function selectedAiModel() {
         return $("aiCustomModel").value.trim() || $("aiModel").value;
@@ -694,6 +815,7 @@ export function homePage() {
 
       function draftPayload() {
         const background = $("transactionContext").value;
+        const referenceTemplateText = referenceTemplateForDraft();
         return {
           templateId: $("templateId").value,
           clientContext: {
@@ -711,7 +833,7 @@ export function homePage() {
             specialConcerns: deriveSpecialConcerns(background)
           },
           requestedClauseIds: ["data-security", "return-or-destruction"],
-          referenceTemplateText: $("referenceTemplateText").value,
+          referenceTemplateText,
           aiSettings: aiSettingsPayload()
         };
       }
@@ -901,14 +1023,65 @@ export function homePage() {
       });
       $("printOutput").addEventListener("click", () => window.print());
       $("referenceTemplateFile").addEventListener("change", async (event) => {
-        const file = event.target.files && event.target.files[0];
-        if (!file) return;
-        $("referenceTemplateText").value = await file.text();
+        const files = [...(event.target.files || [])];
+        if (files.length === 0) return;
+        const templates = [];
+        for (const file of files) {
+          const text = await file.text();
+          if (!text.trim()) continue;
+          templates.push({ id: templateId(), name: file.name, text: text.trim(), savedAt: new Date().toISOString() });
+        }
+        if (templates.length === 0) return;
+        upsertTemplates(templates);
+        $("savedTemplateSelect").value = templates[templates.length - 1].id;
+        $("referenceTemplateText").value = templates[templates.length - 1].text;
+        renderTemplateLibrary();
+        event.target.value = "";
+      });
+      $("savePastedTemplate").addEventListener("click", () => {
+        const text = $("referenceTemplateText").value.trim();
+        if (!text) {
+          toast("Paste a template first");
+          return;
+        }
+        const name = prompt("Template name", "Firm NDA Template " + (state.templateLibrary.length + 1));
+        if (!name) return;
+        const template = { id: templateId(), name: name.trim(), text, savedAt: new Date().toISOString() };
+        upsertTemplates([template]);
+        $("savedTemplateSelect").value = template.id;
+        renderTemplateLibrary();
+      });
+      $("savedTemplateSelect").addEventListener("change", () => {
+        const selected = selectedSavedTemplate();
+        $("deleteSelectedTemplate").disabled = $("savedTemplateSelect").value === "auto" || !selected;
+        if (selected && $("savedTemplateSelect").value !== "auto") $("referenceTemplateText").value = selected.text;
+        updateTemplateStatus();
+      });
+      $("deleteSelectedTemplate").addEventListener("click", () => {
+        const selectedId = $("savedTemplateSelect").value;
+        if (selectedId === "auto") return;
+        state.templateLibrary = state.templateLibrary.filter((template) => template.id !== selectedId);
+        saveTemplateLibrary();
+        renderTemplateLibrary();
+        toast("Template deleted");
+      });
+      $("clearTemplateLibrary").addEventListener("click", () => {
+        if (!confirm("Delete all saved templates from this browser?")) return;
+        state.templateLibrary = [];
+        saveTemplateLibrary();
+        renderTemplateLibrary();
+        toast("Template library cleared");
+      });
+      ["templateId", "clientRole", "governingLaw", "riskPosture", "purpose", "transactionContext"].forEach((id) => {
+        $(id).addEventListener("input", updateTemplateStatus);
+        $(id).addEventListener("change", updateTemplateStatus);
       });
 
       loadAiSettings();
+      loadTemplateLibrary();
       fillDraft(draftSample);
       fillReview(reviewSample);
+      updateTemplateStatus();
       checkHealth();
     </script>
   </body>
