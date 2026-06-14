@@ -314,6 +314,8 @@ export function homePage() {
         form, .output { height: auto; max-height: none; }
         .summary-row { grid-template-columns: 1fr 1fr; }
         .form-grid { grid-template-columns: 1fr; }
+        .template-library-row { grid-template-columns: 1fr; }
+        .template-library-row .btn { width: 100%; justify-content: center; }
       }
       @media print {
         body { background: white; }
