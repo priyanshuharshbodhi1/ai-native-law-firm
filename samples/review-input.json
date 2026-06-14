@@ -1,0 +1,29 @@
+{
+  "agreementText": "NON-DISCLOSURE AGREEMENT\n\nThe parties may exchange confidential materials in connection with business discussions. The recipient shall not disclose such materials to third parties. The recipient shall not compete with the disclosing party or enter a competing business for three years. This agreement is governed by the laws of India.\n\nThe recipient may share information with its employees and advisors who need to know the information. The obligations continue for two years.",
+  "clientContext": {
+    "client": {
+      "legalName": "Acme AI Private Limited",
+      "entityType": "Private Limited Company",
+      "address": "Bengaluru, Karnataka, India",
+      "signatoryName": "Priya Sharma",
+      "signatoryTitle": "CEO"
+    },
+    "counterparty": {
+      "legalName": "Northstar Software Inc.",
+      "entityType": "Corporation",
+      "address": "Delaware, USA"
+    },
+    "clientRole": "recipient",
+    "jurisdiction": "India",
+    "governingLaw": "India",
+    "purpose": "evaluating a potential SaaS integration and commercial partnership",
+    "transactionContext": "The client is receiving technical and commercial information before a partnership decision.",
+    "confidentialInfoTypes": ["technical documentation", "customer data"],
+    "termMonths": 24,
+    "confidentialitySurvivalMonths": 36,
+    "riskPosture": "friendly",
+    "specialConcerns": ["avoid non-compete", "avoid broad data handling obligations"]
+  },
+  "reviewGoal": "negotiate-balanced",
+  "lawyerReviewer": "Lawyer Cofounder"
+}

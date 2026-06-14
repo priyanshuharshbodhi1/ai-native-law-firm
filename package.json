@@ -1,0 +1,24 @@
+{
+  "name": "nda-builder-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Lawyer-in-the-loop NDA drafting and agreement review agent.",
+  "scripts": {
+    "dev": "bun src/cli.ts draft samples/draft-input.json",
+    "draft:sample": "bun src/cli.ts draft samples/draft-input.json",
+    "review:sample": "bun src/cli.ts review samples/review-input.json",
+    "server": "bun src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mastra/core": "^1.42.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.34",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
