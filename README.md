@@ -93,6 +93,8 @@ bunx vercel --prod
 
 If Vercel asks framework questions, keep the defaults. The app does not need server-side environment variables for provider keys because each lawyer adds their own key in the browser UI.
 
+The production project is connected to the GitHub repository, so pushing to `main` creates a new Vercel production deployment.
+
 ## Product Shape
 
 ### Draft NDA From Scratch
